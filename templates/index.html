@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="IP端口扫描工具 - 快速扫描目标IP的开放端口">
+    <title>端口扫描器 | Port Scanner</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                    <h1>端口扫描器</h1>
+                </div>
+                <span class="version">v1.0</span>
+            </div>
+        </header>
+
+        <!-- 主内容 -->
+        <main class="main-content">
+            <!-- 扫描配置卡片 -->
+            <div class="card scan-config">
+                <div class="card-header">
+                    <h2>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        扫描配置
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form id="scanForm">
+                        <!-- IP地址输入 -->
+                        <div class="form-group">
+                            <label for="ipAddress">目标IP地址</label>
+                            <input type="text" id="ipAddress" placeholder="例如: 192.168.1.1" required>
+                            <span class="error-hint" id="ipError"></span>
+                        </div>
+
+                        <!-- 端口范围 -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="startPort">起始端口</label>
+                                <input type="number" id="startPort" value="1" min="1" max="65535" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="endPort">结束端口</label>
+                                <input type="number" id="endPort" value="1024" min="1" max="65535" required>
+                            </div>
+                        </div>
+
+                        <!-- 快捷预设按钮 -->
+                        <div class="preset-buttons">
+                            <button type="button" class="preset-btn" data-start="1" data-end="1024">常用端口 (1-1024)</button>
+                            <button type="button" class="preset-btn" data-start="80" data-end="443">Web端口</button>
+                            <button type="button" class="preset-btn" data-start="3306" data-end="27017">数据库端口</button>
+                            <button type="button" class="preset-btn" data-start="1" data-end="65535">全部端口</button>
+                        </div>
+
+                        <!-- 线程数设置 -->
+                        <div class="form-group">
+                            <label for="threads">
+                                并发线程数: 
+                                <input type="number" id="threadsInput" min="1" max="500" step="1" value="50" class="threads-input">
+                            </label>
+                            <input type="range" id="threads" min="10" max="500" step="10" value="50" class="slider">
+                            <div class="slider-labels">
+                                <span>10</span>
+                                <span>低</span>
+                                <span>中</span>
+                                <span>高</span>
+                                <span>500</span>
+                            </div>
+                        </div>
+
+                        <!-- 超时设置 -->
+                        <div class="form-group">
+                            <label for="timeout">
+                                连接超时: <span id="timeoutValue">1.0</span> 秒
+                            </label>
+                            <input type="range" id="timeout" min="0.3" max="5" step="0.1" value="1" class="slider">
+                            <div class="slider-labels">
+                                <span>0.3s</span>
+                                <span>快</span>
+                                <span>正常</span>
+                                <span>慢</span>
+                                <span>5s</span>
+                            </div>
+                        </div>
+
+                        <!-- 操作按钮 -->
+                        <div class="button-group">
+                            <button type="submit" id="startBtn" class="btn btn-primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="5 3 19 12 5 21 5 3"/>
+                                </svg>
+                                开始扫描
+                            </button>
+                            <button type="button" id="resumeBtn" class="btn btn-secondary" disabled style="display: none;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="5 3 19 12 5 21 5 3"/>
+                                </svg>
+                                继续扫描
+                            </button>
+                            <button type="button" id="stopBtn" class="btn btn-danger" disabled>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="6" y="6" width="12" height="12"/>
+                                </svg>
+                                停止扫描
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 进度卡片 -->
+            <div class="card progress-card" id="progressCard" style="display: none;">
+                <div class="card-header">
+                    <h2>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                        扫描进度
+                    </h2>
+                    <span class="status-badge" id="statusBadge">进行中</span>
+                </div>
+                <div class="card-body">
+                    <div class="progress-info">
+                        <span id="progressText">0%</span>
+                        <span id="scanStats">已扫描: 0 / 0 | 开放端口: 0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 结果卡片 -->
+            <div class="card results-card">
+                <div class="card-header">
+                    <h2>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        扫描结果
+                        <span class="result-count" id="resultCount">(0)</span>
+                    </h2>
+                    <button type="button" id="exportBtn" class="btn btn-secondary" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        导出CSV
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>端口</th>
+                                    <th>服务</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <tr class="empty-row">
+                                    <td colspan="3">暂无扫描结果，请先开始扫描</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <p>基于 Flask + Socket.IO 构建 | GitHub风格界面</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

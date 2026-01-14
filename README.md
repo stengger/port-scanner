@@ -91,6 +91,8 @@ port-scanner/
 ├── app.py              # Flask 主程序
 ├── scanner.py          # 独立端口扫描模块
 ├── requirements.txt    # Python 依赖
+├── demo.webp           # 操作演示动图
+├── .gitignore          # Git 忽略配置
 ├── templates/
 │   └── index.html      # 前端页面
 ├── static/
